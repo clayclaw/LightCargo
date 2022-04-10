@@ -1,0 +1,10 @@
+name: LightCargo-Config
+main: io.github.clayclaw.lightcargo.config.BootstrapPlugin
+version: 0.0.1
+libraries:
+  - com.google.code.gson:gson:2.9.0
+  - org.yaml:snakeyaml:1.30
+  # Libraries for all cargo plugins
+  - org.jetbrains.kotlin:kotlin-stdlib:1.6.20-RC
+  - org.jetbrains.kotlin:kotlin-reflect:1.6.20-RC
+  - org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0

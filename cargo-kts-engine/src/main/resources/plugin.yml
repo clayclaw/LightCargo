@@ -1,0 +1,24 @@
+name: LightCargo-KtsEngine
+main: io.github.clayclaw.lightcargo.kts.environment.bukkit.BootstrapPlugin
+version: 0.0.1
+description: LightCargo KtsEngine plugin
+author: ButterJar#0149
+commands:
+  rcs:
+    description: Recompile and evaluate scripts
+  rds:
+    description: Rediscover and compile scripts
+libraries:
+  - org.jetbrains.kotlin:kotlin-script-runtime:1.6.10
+  - org.jetbrains.kotlin:kotlin-scripting-common:1.6.10
+  - org.jetbrains.kotlin:kotlin-scripting-jvm:1.6.10
+  - org.jetbrains.kotlin:kotlin-scripting-jvm-host:1.6.10
+  - org.jetbrains.kotlin:kotlin-scripting-dependencies:1.6.10
+  - org.jetbrains.kotlin:kotlin-scripting-dependencies-maven:1.6.10
+  - org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:1.6.10
+  # Libraries for all cargo plugins
+  - org.jetbrains.kotlin:kotlin-stdlib:1.6.20-RC
+  - org.jetbrains.kotlin:kotlin-reflect:1.6.20-RC
+  - org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0
+  - io.insert-koin:koin-annotations:1.0.0-beta-1
+  - io.insert-koin:koin-core-jvm:3.2.0-beta-1
