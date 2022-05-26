@@ -10,5 +10,6 @@ class CommandRegistry: KoinComponent {
     fun registerCommands() {
         Bukkit.getPluginCommand("rds")!!.setExecutor(RdsCommandHandler(scriptManager))
         Bukkit.getPluginCommand("rcs")!!.setExecutor(RcsCommandHandler(scriptManager))
+        Bukkit.getPluginCommand("rs")!!.setExecutor(RsCommandHandler(scriptManager))
     }
 }

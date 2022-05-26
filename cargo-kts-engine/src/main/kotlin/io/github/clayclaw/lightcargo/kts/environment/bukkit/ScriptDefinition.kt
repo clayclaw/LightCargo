@@ -1,10 +1,8 @@
 package io.github.clayclaw.lightcargo.kts.environment.bukkit
 
-import io.github.clayclaw.lightcargo.kts.definition.ScriptBase
-import io.github.clayclaw.lightcargo.kts.definition.annotation.Import
-import io.github.clayclaw.lightcargo.kts.definition.annotation.resolveAnnotations
-import io.github.clayclaw.lightcargo.kts.environment.bukkit.annotation.RequiredPlugins
-import io.github.clayclaw.lightcargo.kts.environment.bukkit.annotation.resolveBukkitAnnotations
+import io.github.clayclaw.lightcargo.kts.definition.*
+import io.github.clayclaw.lightcargo.kts.definition.annotation.*
+import io.github.clayclaw.lightcargo.kts.environment.bukkit.annotation.*
 import java.io.File
 import kotlin.script.experimental.annotations.KotlinScript
 import kotlin.script.experimental.api.*
@@ -27,8 +25,9 @@ const val BUKKIT_SCRIPT_DEFINITION_NAME = "bk.kts"
 abstract class BukkitScriptBase: ScriptBase
 
 object BukkitScriptCompilationConfig: ScriptCompilationConfiguration({
-    // defaultImports(javaImports + kotlinCoroutinesImports + annotationsImports + bukkitAnnotationsImports + bukkitImports)
+    defaultImports(javaImports + kotlinCoroutinesImports + annotationsImports + bukkitAnnotationsImports + bukkitImports)
     jvm {
+        // dependenciesFromClassloader(classLoader = BootstrapPlugin.pluginClassLoader, wholeClasspath = true)
         dependenciesFromClassContext(BukkitScriptCompilationConfig::class, wholeClasspath = true)
     }
     refineConfiguration {

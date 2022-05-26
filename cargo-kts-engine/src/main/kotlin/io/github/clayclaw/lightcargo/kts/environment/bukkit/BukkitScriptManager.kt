@@ -92,9 +92,12 @@ class BukkitScriptManager : ScriptManager {
                 }
             }
 
-        scriptState[ScriptState.Evaluated::class] = scriptState[ScriptState.Compiled::class]?.map {
-            evaluateScript(it as ScriptState.Compiled)
-        }?.toList() ?: emptyList()
+        scriptState[ScriptState.Evaluated::class] = scriptState[ScriptState.Compiled::class]
+            ?.sortedBy { it.scriptFile.name.firstOrNull() ?: 'Z' }
+            ?.map {
+                evaluateScript(it as ScriptState.Compiled)
+            }
+            ?: emptyList()
     }
 
     @Suppress("UNCHECKED_CAST")

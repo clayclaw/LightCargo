@@ -18,7 +18,9 @@ fun ScriptCompilationConfiguration.Builder.resolveBukkitAnnotations(context: Scr
         when(annotation) {
             is RequiredPlugins -> {
                 annotation.plugins.map {
-                    Bukkit.getPluginManager().getPlugin(it)!!.javaClass.classLoader.getFiles()
+                    val plugin = Bukkit.getPluginManager().getPlugin(it)
+                        ?: throw IllegalArgumentException("Plugin $it is required but not found")
+                    plugin.javaClass.classLoader.getFiles()
                 }.flatten().let {
                     updateClasspath(it)
                 }

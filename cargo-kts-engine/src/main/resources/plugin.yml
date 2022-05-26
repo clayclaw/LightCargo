@@ -3,11 +3,15 @@ main: io.github.clayclaw.lightcargo.kts.environment.bukkit.BootstrapPlugin
 version: 0.0.1
 description: LightCargo KtsEngine plugin
 author: ButterJar#0149
+softdepend:
+  - Reactant
 commands:
   rcs:
     description: Recompile and evaluate scripts
   rds:
     description: Rediscover and compile scripts
+  rs:
+    description: Reload scripts
 libraries:
   - org.jetbrains.kotlin:kotlin-script-runtime:1.6.10
   - org.jetbrains.kotlin:kotlin-scripting-common:1.6.10

@@ -27,8 +27,12 @@ class BootstrapPlugin: JavaPlugin() {
             printLogger()
             modules(KoinModuleKts().module)
         }
-        ScriptLoader().loadAll()
+
         CommandRegistry().registerCommands()
+
+        server.scheduler.runTask(this, Runnable {
+            ScriptLoader().loadAll()
+        })
     }
 
     override fun onDisable() {

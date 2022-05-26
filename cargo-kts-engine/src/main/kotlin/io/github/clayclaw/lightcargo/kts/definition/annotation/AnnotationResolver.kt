@@ -7,6 +7,7 @@ import kotlin.script.experimental.dependencies.CompoundDependenciesResolver
 import kotlin.script.experimental.dependencies.FileSystemDependenciesResolver
 import kotlin.script.experimental.dependencies.maven.MavenDependenciesResolver
 import kotlin.script.experimental.dependencies.resolveFromScriptSourceAnnotations
+import kotlin.script.experimental.host.FileBasedScriptSource
 import kotlin.script.experimental.host.FileScriptSource
 import kotlin.script.experimental.jvm.updateClasspath
 
@@ -21,10 +22,11 @@ fun resolveAnnotations(
     val annotations = context.collectedData?.get(ScriptCollectedData.collectedAnnotations)?.takeIf { it.isNotEmpty() }
         ?: return context.compilationConfiguration.asSuccess()
     return context.compilationConfiguration.with {
+        val scriptBaseDir = (context.script as? FileBasedScriptSource)?.file?.parentFile
         annotations.forEach { (annotation, _) ->
             when(annotation) {
                 is Import -> annotation.scriptPaths
-                    .map { FileScriptSource(scriptFolder?.resolve(it) ?: File(it)) }
+                    .map { FileScriptSource((scriptFolder?.resolve(it) ?: File(it))) }
                     .let { importScripts.append(it) }
                 else -> {}
             }

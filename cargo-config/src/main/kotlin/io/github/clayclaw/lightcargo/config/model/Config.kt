@@ -1,5 +1,6 @@
 package io.github.clayclaw.lightcargo.config.model
 
+import io.github.clayclaw.lightcargo.config.BootstrapPlugin
 import io.github.clayclaw.lightcargo.config.provider.ConfigProvider
 import io.github.clayclaw.lightcargo.config.provider.decideConfigProvider
 import java.io.File
@@ -15,7 +16,12 @@ class Config<T: Any>(
         if(!file.exists()) {
             file.parentFile.mkdirs()
             file.createNewFile()
-            content = typeClass.getConstructor().newInstance()
+            try {
+                content = typeClass.getConstructor().newInstance()
+            } catch(e: Exception) {
+                BootstrapPlugin.instance.logger.severe("Failed to create new instance of ${typeClass.canonicalName}")
+                e.printStackTrace()
+            }
             save()
         } else {
             reload()
