@@ -2,8 +2,10 @@ package io.github.clayclaw.lightcargo.kts.environment.bukkit
 
 import io.github.clayclaw.lightcargo.kts.definition.*
 import io.github.clayclaw.lightcargo.kts.definition.annotation.*
+import io.github.clayclaw.lightcargo.kts.definition.kotlin.FileBasedScriptCache
 import io.github.clayclaw.lightcargo.kts.environment.bukkit.annotation.*
 import java.io.File
+import java.io.ObjectOutputStream
 import kotlin.script.experimental.annotations.KotlinScript
 import kotlin.script.experimental.api.*
 import kotlin.script.experimental.dependencies.DependsOn
@@ -12,8 +14,9 @@ import kotlin.script.experimental.host.ScriptingHostConfiguration
 import kotlin.script.experimental.host.getScriptingClass
 import kotlin.script.experimental.jvm.*
 
-val bukkitScriptBaseDir = File("plugins/LightCargo/module-kts-engine/environment/bukkit")
-const val BUKKIT_SCRIPT_DEFINITION_NAME = "bk.kts"
+val bukkitScriptBaseDir = File("lightcargo-kts/scripts")
+val bukkitScriptCacheDir = File("lightcargo-kts/cache")
+const val BUKKIT_SCRIPT_DEFINITION_NAME = "lc.kts"
 
 @KotlinScript(
     displayName = "LightCargo Bukkit Script",
@@ -27,8 +30,8 @@ abstract class BukkitScriptBase: ScriptBase
 object BukkitScriptCompilationConfig: ScriptCompilationConfiguration({
     defaultImports(javaImports + kotlinCoroutinesImports + annotationsImports + bukkitAnnotationsImports + bukkitImports)
     jvm {
-        // dependenciesFromClassloader(classLoader = BootstrapPlugin.pluginClassLoader, wholeClasspath = true)
-        dependenciesFromClassContext(BukkitScriptCompilationConfig::class, wholeClasspath = true)
+        dependenciesFromClassloader(classLoader = BootstrapPlugin.pluginClassLoader, wholeClasspath = true)
+        // dependenciesFromClassContext(BukkitScriptCompilationConfig::class, wholeClasspath = true)
     }
     refineConfiguration {
         onAnnotations(
@@ -39,21 +42,28 @@ object BukkitScriptCompilationConfig: ScriptCompilationConfiguration({
     ide {
         acceptedLocations(ScriptAcceptedLocation.Everywhere)
     }
-})
+}) {
+    private fun readResolve(): Any = BukkitScriptCompilationConfig
+}
 
 object BukkitScriptEvaluationConfig: ScriptEvaluationConfiguration({
     jvm {
         baseClassLoader(BootstrapPlugin.pluginClassLoader)
         loadDependencies(false)
     }
-})
+}) {
+    private fun readResolve(): Any = BukkitScriptEvaluationConfig
+}
 
 object BukkitScriptHostConfig: ScriptingHostConfiguration({
     jvm {
+        compilationCache(FileBasedScriptCache(bukkitScriptCacheDir))
         baseClassLoader(BootstrapPlugin.pluginClassLoader)
     }
     getScriptingClass(JvmGetScriptingClass())
-})
+}) {
+    private fun readResolve(): Any = BukkitScriptHostConfig
+}
 
 private fun resolveBukkitScriptAnnotations(context: ScriptConfigurationRefinementContext) = resolveAnnotations(
     bukkitScriptBaseDir, context

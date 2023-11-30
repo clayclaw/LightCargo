@@ -11,7 +11,9 @@ commands:
   rds:
     description: Rediscover and compile scripts
   rs:
-    description: Reload scripts
+    description: Reload changed scripts
+  fullrs:
+    description: Fully reload scripts
 libraries:
   - org.jetbrains.kotlin:kotlin-script-runtime:1.6.10
   - org.jetbrains.kotlin:kotlin-scripting-common:1.6.10

@@ -5,6 +5,9 @@ import io.github.clayclaw.lightcargo.kts.definition.discoverAllScriptRecursively
 import io.github.clayclaw.lightcargo.kts.definition.manager.ScriptManager
 import org.koin.core.annotation.Single
 import java.io.File
+import java.util.*
+import kotlin.collections.HashMap
+import kotlin.collections.HashSet
 import kotlin.reflect.KClass
 import kotlin.script.experimental.api.ResultValue
 import kotlin.script.experimental.api.valueOrThrow
@@ -18,7 +21,7 @@ class BukkitScriptManager : ScriptManager {
     private val compiler = JvmScriptCompiler(BukkitScriptHostConfig)
     private val evaluator = BasicJvmScriptEvaluator()
 
-    private val scriptState: HashMap<KClass<out ScriptState>, List<ScriptState>> = hashMapOf()
+    private val scriptState: HashMap<KClass<out ScriptState>, MutableList<ScriptState>> = hashMapOf()
 
     private fun discoverAllScript(): Sequence<ScriptState.Discovered> {
         bukkitScriptBaseDir.mkdirs()
@@ -27,6 +30,7 @@ class BukkitScriptManager : ScriptManager {
     }
 
     private suspend fun compileScript(scriptFile: File): ScriptState.Compiled {
+        bukkitScriptCacheDir.mkdirs()
         val compiledScript = compiler(scriptFile.toScriptSource(), BukkitScriptCompilationConfig).valueOrThrow()
         return ScriptState.Compiled(scriptFile, compiledScript, scriptFile.lastModified())
     }
@@ -51,21 +55,22 @@ class BukkitScriptManager : ScriptManager {
                 is ResultValue.Value -> (result.returnValue as ResultValue.Value).let { it.scriptClass to it.scriptInstance }
                 is ResultValue.Unit -> (result.returnValue as ResultValue.Unit).let { it.scriptClass to it.scriptInstance }
             }.let {
-                println("Methods from script class ${it.first?.java?.canonicalName}: ${it.first?.java?.declaredMethods?.map { f -> f.name }}")
+                // println("Methods from script class ${it.first?.java?.canonicalName}: ${it.first?.java?.declaredMethods?.map { f -> f.name }}")
+                // printClassLoader(it.first)
                 return ScriptState.Evaluated(compiledScript.scriptFile, it.first, it.second)
             }
         }
     }
 
     internal fun discoverScripts() {
-        scriptState[ScriptState.Discovered::class] = discoverAllScript().toList()
+        scriptState[ScriptState.Discovered::class] = discoverAllScript().toMutableList()
     }
 
 
     internal suspend fun compileScripts() {
         scriptState[ScriptState.Compiled::class] = scriptState[ScriptState.Discovered::class]?.mapNotNull {
             compileScriptCatching(it.scriptFile)
-        }?.toList() ?: emptyList()
+        }?.toMutableList() ?: LinkedList()
     }
 
     /**
@@ -73,15 +78,26 @@ class BukkitScriptManager : ScriptManager {
      */
     internal suspend fun recompileScripts(): List<ScriptState.Compiled> {
         val groups = scriptState[ScriptState.Compiled::class]
-            ?.groupBy { it.scriptFile.lastModified() == (it as ScriptState.Compiled).lastModified }
+            ?.groupBy { it.scriptFile.lastModified() != (it as ScriptState.Compiled).lastModified }
             ?: return emptyList()
         val recompiled = groups[true]?.mapNotNull { compileScriptCatching(it.scriptFile) } ?: emptyList()
-        scriptState[ScriptState.Compiled::class] = recompiled.plus(groups[false] ?: emptyList())
+        scriptState[ScriptState.Compiled::class] = recompiled.plus(groups[false] ?: LinkedList()).toMutableList()
         return recompiled
     }
 
     internal suspend fun evaluateScripts() {
+        // reload all compiled script
+        scriptState[ScriptState.Compiled::class]?.let {
+            evaluateSelectedScripts(it.filterIsInstance<ScriptState.Compiled>())
+        }
+    }
+
+    internal suspend fun evaluateSelectedScripts(list: List<ScriptState.Compiled>) {
+        val paths = HashSet<String>()
+        list.forEach { paths.add(it.scriptFile.absolutePath) }
+        // Unload all script first
         scriptState[ScriptState.Evaluated::class]
+            ?.filter { paths.contains(it.scriptFile.absolutePath) }
             ?.forEach {
                 (it as? ScriptState.Evaluated)?.let { result ->
                     runCatching {
@@ -92,17 +108,39 @@ class BukkitScriptManager : ScriptManager {
                 }
             }
 
-        scriptState[ScriptState.Evaluated::class] = scriptState[ScriptState.Compiled::class]
-            ?.sortedBy { it.scriptFile.name.firstOrNull() ?: 'Z' }
-            ?.map {
+        scriptState[ScriptState.Evaluated::class]?.removeIf { paths.contains(it.scriptFile.absolutePath) }
+
+        // evaluate all scripts
+        list
+            .sortedBy { it.scriptFile.name.firstOrNull() ?: 'Z' }
+            .map {
                 evaluateScript(it as ScriptState.Compiled)
             }
-            ?: emptyList()
+            .forEach {
+                scriptState.getOrPut(ScriptState.Evaluated::class) { LinkedList() }.add(it)
+            }
     }
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ScriptState> getByScriptState(state: KClass<out T>): List<T> {
         return scriptState[state]?.map { it as T } ?: emptyList()
+    }
+
+    private fun printClassLoader(clazz: KClass<*>?) {
+        println("------------ ClassLoader Dump ------------ ")
+        println("ScriptClassLoader: ${clazz?.java?.classLoader} | PluginLoader: ${BootstrapPlugin.pluginClassLoader}")
+        var loader = clazz?.java?.classLoader
+        while(loader != null) {
+            println("ScriptLoader = $loader")
+            loader = loader.parent
+        }
+        loader = BootstrapPlugin.pluginClassLoader
+        while(loader != null) {
+            println("PluginLoader = $loader")
+            loader = loader.parent
+        }
+        val func: () -> Unit = {}
+        println("ExampleKotlinLoader = ${func.javaClass.classLoader}")
     }
 
 }
