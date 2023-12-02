@@ -1,5 +1,6 @@
 package io.github.clayclaw.lightcargo.kts.environment.bukkit
 
+import dev.reactant.reactant.core.component.Component
 import io.github.clayclaw.lightcargo.kts.definition.ScriptState
 import io.github.clayclaw.lightcargo.kts.definition.discoverAllScriptRecursively
 import io.github.clayclaw.lightcargo.kts.definition.manager.ScriptManager
@@ -14,7 +15,7 @@ import kotlin.script.experimental.host.toScriptSource
 import kotlin.script.experimental.jvm.BasicJvmScriptEvaluator
 import kotlin.script.experimental.jvmhost.JvmScriptCompiler
 
-
+@Component
 class BukkitScriptManager : ScriptManager {
 
     private val compiler = JvmScriptCompiler(BukkitScriptHostConfig)
