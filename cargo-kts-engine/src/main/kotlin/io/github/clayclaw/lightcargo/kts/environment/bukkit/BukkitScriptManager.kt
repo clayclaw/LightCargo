@@ -3,7 +3,6 @@ package io.github.clayclaw.lightcargo.kts.environment.bukkit
 import io.github.clayclaw.lightcargo.kts.definition.ScriptState
 import io.github.clayclaw.lightcargo.kts.definition.discoverAllScriptRecursively
 import io.github.clayclaw.lightcargo.kts.definition.manager.ScriptManager
-import org.koin.core.annotation.Single
 import java.io.File
 import java.util.*
 import kotlin.collections.HashMap
@@ -15,7 +14,7 @@ import kotlin.script.experimental.host.toScriptSource
 import kotlin.script.experimental.jvm.BasicJvmScriptEvaluator
 import kotlin.script.experimental.jvmhost.JvmScriptCompiler
 
-@Single
+
 class BukkitScriptManager : ScriptManager {
 
     private val compiler = JvmScriptCompiler(BukkitScriptHostConfig)

@@ -5,7 +5,6 @@ import io.github.clayclaw.lightcargo.kts.definition.annotation.*
 import io.github.clayclaw.lightcargo.kts.definition.kotlin.FileBasedScriptCache
 import io.github.clayclaw.lightcargo.kts.environment.bukkit.annotation.*
 import java.io.File
-import java.io.ObjectOutputStream
 import kotlin.script.experimental.annotations.KotlinScript
 import kotlin.script.experimental.api.*
 import kotlin.script.experimental.dependencies.DependsOn

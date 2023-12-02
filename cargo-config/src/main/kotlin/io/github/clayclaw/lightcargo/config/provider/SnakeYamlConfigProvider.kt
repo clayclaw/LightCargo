@@ -1,6 +1,7 @@
 package io.github.clayclaw.lightcargo.config.provider
 
 import org.yaml.snakeyaml.DumperOptions
+import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.CustomClassLoaderConstructor
 import org.yaml.snakeyaml.nodes.Tag
@@ -15,7 +16,7 @@ class SnakeYamlConfigProvider(
     }
 ): ConfigProvider {
     private val representer = Representer(options)
-    private val yaml = Yaml(CustomClassLoaderConstructor(this.javaClass.classLoader), representer, options)
+    private val yaml = Yaml(CustomClassLoaderConstructor(this.javaClass.classLoader, LoaderOptions()), representer, options)
 
     override fun <T> read(file: File, type: Class<T>): T {
         return file.inputStream().use {
