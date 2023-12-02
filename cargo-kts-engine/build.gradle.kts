@@ -10,7 +10,6 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-scripting-dependencies")
     implementation("org.jetbrains.kotlin:kotlin-scripting-dependencies-maven")
     implementation("org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable")
-    implementation(kotlin("stdlib-jdk8"))
 }
 repositories {
     mavenCentral()

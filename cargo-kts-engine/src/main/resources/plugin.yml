@@ -14,11 +14,3 @@ commands:
     description: Reload changed scripts
   fullrs:
     description: Fully reload scripts
-libraries:
-  - org.jetbrains.kotlin:kotlin-script-runtime:1.6.10
-  - org.jetbrains.kotlin:kotlin-scripting-common:1.6.10
-  - org.jetbrains.kotlin:kotlin-scripting-jvm:1.6.10
-  - org.jetbrains.kotlin:kotlin-scripting-jvm-host:1.6.10
-  - org.jetbrains.kotlin:kotlin-scripting-dependencies:1.6.10
-  - org.jetbrains.kotlin:kotlin-scripting-dependencies-maven:1.6.10
-  - org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:1.6.10
