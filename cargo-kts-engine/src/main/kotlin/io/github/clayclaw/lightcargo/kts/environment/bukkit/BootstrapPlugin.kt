@@ -2,6 +2,7 @@ package io.github.clayclaw.lightcargo.kts.environment.bukkit
 
 import dev.reactant.reactant.core.ReactantPlugin
 import dev.reactant.reactant.core.component.Component
+import dev.reactant.reactant.core.component.lifecycle.LifeCycleHook
 import io.github.clayclaw.lightcargo.kts.definition.ScriptState
 import io.github.clayclaw.lightcargo.kts.definition.manager.getByScriptState
 import kotlinx.coroutines.runBlocking
@@ -30,9 +31,13 @@ class BootstrapPlugin: JavaPlugin() {
 @Component
 class ScriptLoader(
     private val scriptManager: BukkitScriptManager,
-) {
+): LifeCycleHook {
 
-    fun loadAll() {
+    override fun onEnable() {
+        loadAll()
+    }
+
+    private fun loadAll() {
         scriptManager.run {
             runBlocking {
                 BootstrapPlugin.instance.logger.info("Searching for scripts..")
