@@ -1,5 +1,6 @@
 package io.github.clayclaw.lightcargo.kts.environment.bukkit
 
+import dev.reactant.reactant.core.ReactantCore
 import dev.reactant.reactant.core.component.Component
 import io.github.clayclaw.lightcargo.kts.definition.ScriptState
 import io.github.clayclaw.lightcargo.kts.definition.discoverAllScriptRecursively
@@ -132,6 +133,7 @@ class BukkitScriptManager : ScriptManager {
         var loader = clazz?.java?.classLoader
         while(loader != null) {
             println("ScriptLoader = $loader")
+            // println("             => ${loader.definedPackages.joinToString(", ") { it.name }}")
             loader = loader.parent
         }
         loader = BootstrapPlugin.pluginClassLoader

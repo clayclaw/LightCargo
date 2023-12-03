@@ -1,9 +1,11 @@
 package io.github.clayclaw.lightcargo.kts.environment.bukkit.command
 
+import dev.reactant.reactant.core.component.Component
 import dev.reactant.reactant.core.component.lifecycle.LifeCycleHook
 import io.github.clayclaw.lightcargo.kts.environment.bukkit.BukkitScriptManager
 import org.bukkit.Bukkit
 
+@Component
 class CommandRegistry(
     private val scriptManager: BukkitScriptManager
 ): LifeCycleHook {

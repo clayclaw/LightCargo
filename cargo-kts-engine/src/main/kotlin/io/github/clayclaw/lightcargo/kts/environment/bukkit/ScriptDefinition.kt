@@ -1,5 +1,6 @@
 package io.github.clayclaw.lightcargo.kts.environment.bukkit
 
+import dev.reactant.reactant.core.ReactantCore
 import io.github.clayclaw.lightcargo.kts.definition.*
 import io.github.clayclaw.lightcargo.kts.definition.annotation.*
 import io.github.clayclaw.lightcargo.kts.definition.kotlin.FileBasedScriptCache
@@ -29,8 +30,9 @@ abstract class BukkitScriptBase: ScriptBase
 object BukkitScriptCompilationConfig: ScriptCompilationConfiguration({
     defaultImports(javaImports + kotlinCoroutinesImports + annotationsImports + bukkitAnnotationsImports + bukkitImports)
     jvm {
-        dependenciesFromClassloader(classLoader = BootstrapPlugin.pluginClassLoader, wholeClasspath = true)
-        // dependenciesFromClassContext(BukkitScriptCompilationConfig::class, wholeClasspath = true)
+        dependenciesFromClassloader(classLoader = ReactantCore.instance.javaClass.classLoader, wholeClasspath = true)
+        // dependenciesFromClassContext(ReactantCore::class, wholeClasspath = true)
+        compilerOptions.append("-Xadd-modules=ALL-MODULE-PATH")
     }
     refineConfiguration {
         onAnnotations(
@@ -47,7 +49,7 @@ object BukkitScriptCompilationConfig: ScriptCompilationConfiguration({
 
 object BukkitScriptEvaluationConfig: ScriptEvaluationConfiguration({
     jvm {
-        baseClassLoader(BootstrapPlugin.pluginClassLoader)
+        baseClassLoader(ReactantCore.instance.javaClass.classLoader)
         loadDependencies(false)
     }
 }) {
@@ -57,7 +59,7 @@ object BukkitScriptEvaluationConfig: ScriptEvaluationConfiguration({
 object BukkitScriptHostConfig: ScriptingHostConfiguration({
     jvm {
         compilationCache(FileBasedScriptCache(bukkitScriptCacheDir))
-        baseClassLoader(BootstrapPlugin.pluginClassLoader)
+        baseClassLoader(ReactantCore.instance.javaClass.classLoader)
     }
     getScriptingClass(JvmGetScriptingClass())
 }) {

@@ -35,16 +35,12 @@ allprojects {
     }
     dependencies {
         compileOnly("org.spigotmc:spigot-api:${spigotVersion}-SNAPSHOT")
-        compileOnly("com.github.Onyxium-Studio:Reactant:5b8cbc65d0")
+        compileOnly("com.github.Onyxium-Studio:Reactant:1b58177719")
         compileOnly(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
     }
 
-    sourceSets.main {
-        java.srcDirs("build/generated/ksp/main/kotlin")
-    }
-
     val shadowJar = (tasks["shadowJar"] as com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar).apply {
-        exclude("kotlin*", "junit*", "org.junit*", "org.hamcrest*", "org.intellij*", "org.jetbrains*")
+        //exclude("kotlin*", "junit*", "org.junit*", "org.hamcrest*", "org.intellij*", "org.jetbrains*")
         //relocate("org.from.package", "org.target.package")
     }
 
@@ -73,16 +69,16 @@ allprojects {
     }
 }
 dependencies {
-    implementation(kotlin("stdlib-jdk8"))
+    // compileOnly(kotlin("stdlib-jdk8"))
 }
 repositories {
     mavenCentral()
 }
 val compileKotlin: KotlinCompile by tasks
 compileKotlin.kotlinOptions {
-    jvmTarget = "1.8"
+    jvmTarget = "17"
 }
 val compileTestKotlin: KotlinCompile by tasks
 compileTestKotlin.kotlinOptions {
-    jvmTarget = "1.8"
+    jvmTarget = "17"
 }

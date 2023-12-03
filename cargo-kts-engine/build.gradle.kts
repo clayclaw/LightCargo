@@ -4,21 +4,23 @@ plugins {
     kotlin("jvm") version "1.9.20"
 }
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-scripting-common")
-    implementation("org.jetbrains.kotlin:kotlin-scripting-jvm")
-    implementation("org.jetbrains.kotlin:kotlin-scripting-jvm-host")
-    implementation("org.jetbrains.kotlin:kotlin-scripting-dependencies")
-    implementation("org.jetbrains.kotlin:kotlin-scripting-dependencies-maven")
-    implementation("org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable")
+    compileOnly("org.jetbrains.kotlin:kotlin-scripting-common")
+    compileOnly("org.jetbrains.kotlin:kotlin-scripting-jvm")
+    compileOnly("org.jetbrains.kotlin:kotlin-scripting-jvm-host")
+    compileOnly("org.jetbrains.kotlin:kotlin-scripting-dependencies")
+    compileOnly("org.jetbrains.kotlin:kotlin-scripting-dependencies-maven")
+    compileOnly("org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable")
+
+    // runtimeOnly("org.jetbrains.kotlin:kotlin-script-runtime")
 }
 repositories {
     mavenCentral()
 }
 val compileKotlin: KotlinCompile by tasks
 compileKotlin.kotlinOptions {
-    jvmTarget = "1.8"
+    jvmTarget = "17"
 }
 val compileTestKotlin: KotlinCompile by tasks
 compileTestKotlin.kotlinOptions {
-    jvmTarget = "1.8"
+    jvmTarget = "17"
 }
