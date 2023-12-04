@@ -32,7 +32,7 @@ object BukkitScriptCompilationConfig: ScriptCompilationConfiguration({
     jvm {
         dependenciesFromClassloader(classLoader = ReactantCore.instance.javaClass.classLoader, wholeClasspath = true)
         // dependenciesFromClassContext(ReactantCore::class, wholeClasspath = true)
-        compilerOptions.append("-Xadd-modules=ALL-MODULE-PATH")
+        compilerOptions.append("-Xadd-modules=ALL-MODULE-PATH", "-jvm-target=17")
     }
     refineConfiguration {
         onAnnotations(
