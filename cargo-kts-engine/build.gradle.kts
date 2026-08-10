@@ -17,8 +17,6 @@ dependencies {
             exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-common")
             exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
             exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
-            exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
-            exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
         }
     }
 
