@@ -1,10 +1,10 @@
 package io.github.clayclaw.lightcargo.kts.environment.bukkit
 
-import dev.reactant.reactant.core.ReactantCore
 import dev.reactant.reactant.core.component.Component
 import io.github.clayclaw.lightcargo.kts.definition.ScriptState
 import io.github.clayclaw.lightcargo.kts.definition.discoverAllScriptRecursively
 import io.github.clayclaw.lightcargo.kts.definition.manager.ScriptManager
+import io.github.clayclaw.lightcargo.kts.environment.bukkit.classloading.ScriptClasspathPlans
 import java.io.File
 import java.util.*
 import kotlin.collections.HashMap
@@ -32,6 +32,7 @@ class BukkitScriptManager : ScriptManager {
 
     private suspend fun compileScript(scriptFile: File): ScriptState.Compiled {
         bukkitScriptCacheDir.mkdirs()
+        ScriptClasspathPlans.reset(scriptFile)
         val compiledScript = compiler(scriptFile.toScriptSource(), BukkitScriptCompilationConfig).valueOrThrow()
         return ScriptState.Compiled(scriptFile, compiledScript, scriptFile.lastModified())
     }
@@ -49,7 +50,11 @@ class BukkitScriptManager : ScriptManager {
     }
 
     private suspend fun evaluateScript(compiledScript: ScriptState.Compiled): ScriptState.Evaluated {
-        evaluator(compiledScript.compiledScript, BukkitScriptEvaluationConfig).valueOrThrow().let { result ->
+        val classpathPlan = ScriptClasspathPlans.get(compiledScript.scriptFile)
+        BootstrapPlugin.instance.logger.fine(
+            "Script ${compiledScript.scriptFile.name} classloader routes: ${classpathPlan.describeRoutes()}"
+        )
+        evaluator(compiledScript.compiledScript, bukkitScriptEvaluationConfig(compiledScript.scriptFile)).valueOrThrow().let { result ->
             when (result.returnValue) {
                 is ResultValue.NotEvaluated -> throw IllegalStateException("Script is not evaluated")
                 is ResultValue.Error -> throw (result.returnValue as ResultValue.Error).error
@@ -115,7 +120,7 @@ class BukkitScriptManager : ScriptManager {
         list
             .sortedBy { it.scriptFile.name.firstOrNull() ?: 'Z' }
             .map {
-                evaluateScript(it as ScriptState.Compiled)
+                evaluateScript(it)
             }
             .forEach {
                 scriptState.getOrPut(ScriptState.Evaluated::class) { LinkedList() }.add(it)

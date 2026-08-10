@@ -4,8 +4,8 @@ import dev.reactant.reactant.core.ReactantPlugin
 import dev.reactant.reactant.core.component.Component
 import dev.reactant.reactant.core.component.lifecycle.LifeCycleHook
 import io.github.clayclaw.lightcargo.kts.definition.ScriptState
+import io.github.clayclaw.lightcargo.kts.definition.runSuspendBlocking
 import io.github.clayclaw.lightcargo.kts.definition.manager.getByScriptState
-import kotlinx.coroutines.runBlocking
 import org.bukkit.plugin.java.JavaPlugin
 import kotlin.system.measureTimeMillis
 
@@ -39,7 +39,7 @@ class ScriptLoader(
 
     private fun loadAll() {
         scriptManager.run {
-            runBlocking {
+            runSuspendBlocking {
                 BootstrapPlugin.instance.logger.info("Searching for scripts..")
                 discoverScripts()
                 BootstrapPlugin.instance.logger.info("Found ${scriptManager.getByScriptState<ScriptState.Discovered>().size} scripts! Compiling...")

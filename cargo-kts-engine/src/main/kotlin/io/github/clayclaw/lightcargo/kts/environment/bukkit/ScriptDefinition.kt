@@ -5,6 +5,8 @@ import io.github.clayclaw.lightcargo.kts.definition.*
 import io.github.clayclaw.lightcargo.kts.definition.annotation.*
 import io.github.clayclaw.lightcargo.kts.definition.kotlin.FileBasedScriptCache
 import io.github.clayclaw.lightcargo.kts.environment.bukkit.annotation.*
+import io.github.clayclaw.lightcargo.kts.environment.bukkit.classloading.ScriptClasspathPlans
+import io.github.clayclaw.lightcargo.kts.environment.bukkit.classloading.classpathFiles
 import java.io.File
 import kotlin.script.experimental.annotations.KotlinScript
 import kotlin.script.experimental.api.*
@@ -30,8 +32,7 @@ abstract class BukkitScriptBase: ScriptBase
 object BukkitScriptCompilationConfig: ScriptCompilationConfiguration({
     defaultImports(javaImports + kotlinCoroutinesImports + annotationsImports + bukkitAnnotationsImports + bukkitImports)
     jvm {
-        dependenciesFromClassloader(classLoader = ReactantCore.instance.javaClass.classLoader, wholeClasspath = true)
-        // dependenciesFromClassContext(ReactantCore::class, wholeClasspath = true)
+        updateClasspath(bukkitHostCompileClasspath())
         compilerOptions.append("-Xadd-modules=ALL-MODULE-PATH", "-jvm-target=17")
     }
     refineConfiguration {
@@ -49,17 +50,24 @@ object BukkitScriptCompilationConfig: ScriptCompilationConfiguration({
 
 object BukkitScriptEvaluationConfig: ScriptEvaluationConfiguration({
     jvm {
-        baseClassLoader(ReactantCore.instance.javaClass.classLoader)
+        baseClassLoader(BukkitScriptBase::class.java.classLoader)
         loadDependencies(false)
     }
 }) {
     private fun readResolve(): Any = BukkitScriptEvaluationConfig
 }
 
+fun bukkitScriptEvaluationConfig(scriptFile: File) = ScriptEvaluationConfiguration({
+    jvm {
+        baseClassLoader(ScriptClasspathPlans.get(scriptFile).createClassLoader())
+        loadDependencies(false)
+    }
+})
+
 object BukkitScriptHostConfig: ScriptingHostConfiguration({
     jvm {
         compilationCache(FileBasedScriptCache(bukkitScriptCacheDir))
-        baseClassLoader(ReactantCore.instance.javaClass.classLoader)
+        baseClassLoader(BukkitScriptBase::class.java.classLoader)
     }
     getScriptingClass(JvmGetScriptingClass())
 }) {
@@ -67,9 +75,21 @@ object BukkitScriptHostConfig: ScriptingHostConfiguration({
 }
 
 private fun resolveBukkitScriptAnnotations(context: ScriptConfigurationRefinementContext) = resolveAnnotations(
-    bukkitScriptBaseDir, context
+    bukkitScriptBaseDir,
+    context,
+    classpathHandler = {
+        ScriptClasspathPlans.getOrCreate(context).recordResolvedDependencies(it)
+    }
 ) {
     it.resolveBukkitAnnotations(context)
+}
+
+private fun bukkitHostCompileClasspath(): List<File> {
+    return (
+        BukkitScriptBase::class.java.classLoader.classpathFiles() +
+            ReactantCore.instance.javaClass.classLoader.classpathFiles()
+        )
+        .distinctBy { it.canonicalFile.absolutePath }
 }
 
 val bukkitImports = listOf(

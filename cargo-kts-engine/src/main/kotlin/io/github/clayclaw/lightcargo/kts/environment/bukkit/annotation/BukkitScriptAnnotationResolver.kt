@@ -1,8 +1,8 @@
 package io.github.clayclaw.lightcargo.kts.environment.bukkit.annotation
 
+import io.github.clayclaw.lightcargo.kts.environment.bukkit.classloading.ScriptClasspathPlans
+import io.github.clayclaw.lightcargo.kts.environment.bukkit.classloading.classpathFiles
 import org.bukkit.Bukkit
-import java.io.File
-import java.net.URLClassLoader
 import kotlin.script.experimental.api.ScriptCollectedData
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.ScriptConfigurationRefinementContext
@@ -20,16 +20,15 @@ fun ScriptCompilationConfiguration.Builder.resolveBukkitAnnotations(context: Scr
                 annotation.plugins.map {
                     val plugin = Bukkit.getPluginManager().getPlugin(it)
                         ?: throw IllegalArgumentException("Plugin $it is required but not found")
-                    plugin.javaClass.classLoader.getFiles()
-                }.flatten().let {
-                    updateClasspath(it)
+                    val files = plugin.javaClass.classLoader.classpathFiles()
+                    ScriptClasspathPlans.getOrCreate(context)
+                        .recordRequiredPlugin(plugin.name, plugin.javaClass.classLoader, files)
+                    files
+                }.flatten().let { files ->
+                    if (files.isNotEmpty()) updateClasspath(files)
                 }
             }
             else -> {}
         }
     }
-}
-
-fun ClassLoader.getFiles(): List<File> {
-    return (this as? URLClassLoader?)?.urLs?.mapNotNull { File(it.toURI().schemeSpecificPart) } ?: emptyList()
 }

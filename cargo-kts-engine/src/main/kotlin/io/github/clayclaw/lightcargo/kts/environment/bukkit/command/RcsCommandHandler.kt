@@ -1,9 +1,9 @@
 package io.github.clayclaw.lightcargo.kts.environment.bukkit.command
 
 import io.github.clayclaw.lightcargo.kts.definition.ScriptState
+import io.github.clayclaw.lightcargo.kts.definition.runSuspendBlocking
 import io.github.clayclaw.lightcargo.kts.definition.manager.getByScriptState
 import io.github.clayclaw.lightcargo.kts.environment.bukkit.BukkitScriptManager
-import kotlinx.coroutines.runBlocking
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -17,7 +17,7 @@ class RcsCommandHandler(
         if(!sender.hasPermission("lightcargo.ktsengine.control")) return false
         sender.sendMessage("Warning: RCS should not be used in production.")
         val time = measureTimeMillis {
-            runBlocking {
+            runSuspendBlocking {
                 scriptManager.compileScripts()
                 sender.sendWithConsole("=> Recompiled ${scriptManager.getByScriptState<ScriptState.Compiled>().size} scripts.")
                 sender.sendWithConsole("=> Evaluating..")

@@ -73,9 +73,9 @@ allprojects {
     val jar = tasks.named<Jar>("jar")
 
     val deployPlugin = tasks.register<Copy>("deployPlugin") {
-        dependsOn(jar)
+        dependsOn(shadowJar)
         System.getenv("PLUGIN_DEPLOY_PATH")?.let {
-            from(jar)
+            from(shadowJar)
             into(it)
         }
     }
