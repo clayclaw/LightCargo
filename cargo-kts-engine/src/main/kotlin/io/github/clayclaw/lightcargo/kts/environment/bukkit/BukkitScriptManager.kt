@@ -1,6 +1,7 @@
 package io.github.clayclaw.lightcargo.kts.environment.bukkit
 
 import dev.reactant.reactant.core.component.Component
+import io.github.clayclaw.lightcargo.kts.definition.ScriptFailureReporter
 import io.github.clayclaw.lightcargo.kts.definition.ScriptState
 import io.github.clayclaw.lightcargo.kts.definition.discoverAllScriptRecursively
 import io.github.clayclaw.lightcargo.kts.definition.manager.ScriptManager
@@ -38,15 +39,11 @@ class BukkitScriptManager : ScriptManager {
     }
 
     private suspend fun compileScriptCatching(scriptFile: File): ScriptState.Compiled? {
-        runCatching {
+        return runCatching {
             compileScript(scriptFile)
-        }.onSuccess {
-            return it
         }.onFailure {
-            it.printStackTrace()
-            BootstrapPlugin.instance.logger.warning("Error while compiling script: ${scriptFile.name}")
-        }
-        return null
+            ScriptFailureReporter.log(BootstrapPlugin.instance.logger, "compiling", scriptFile, it)
+        }.getOrNull()
     }
 
     private suspend fun evaluateScript(compiledScript: ScriptState.Compiled): ScriptState.Evaluated {
@@ -55,17 +52,28 @@ class BukkitScriptManager : ScriptManager {
             "Script ${compiledScript.scriptFile.name} classloader routes: ${classpathPlan.describeRoutes()}"
         )
         evaluator(compiledScript.compiledScript, bukkitScriptEvaluationConfig(compiledScript.scriptFile)).valueOrThrow().let { result ->
-            when (result.returnValue) {
+            when (val returnValue = result.returnValue) {
                 is ResultValue.NotEvaluated -> throw IllegalStateException("Script is not evaluated")
-                is ResultValue.Error -> throw (result.returnValue as ResultValue.Error).error
-                is ResultValue.Value -> (result.returnValue as ResultValue.Value).let { it.scriptClass to it.scriptInstance }
-                is ResultValue.Unit -> (result.returnValue as ResultValue.Unit).let { it.scriptClass to it.scriptInstance }
+                is ResultValue.Error -> throw returnValue.error
+                is ResultValue.Value -> returnValue.scriptClass to returnValue.scriptInstance
+                is ResultValue.Unit -> returnValue.scriptClass to returnValue.scriptInstance
             }.let {
-                // println("Methods from script class ${it.first?.java?.canonicalName}: ${it.first?.java?.declaredMethods?.map { f -> f.name }}")
-                // printClassLoader(it.first)
                 return ScriptState.Evaluated(compiledScript.scriptFile, it.first, it.second)
             }
         }
+    }
+
+    private suspend fun evaluateScriptCatching(compiledScript: ScriptState.Compiled): ScriptState.Evaluated? {
+        return runCatching {
+            evaluateScript(compiledScript)
+        }.onFailure {
+            ScriptFailureReporter.log(
+                BootstrapPlugin.instance.logger,
+                "evaluating",
+                compiledScript.scriptFile,
+                it
+            )
+        }.getOrNull()
     }
 
     internal fun discoverScripts() {
@@ -116,12 +124,10 @@ class BukkitScriptManager : ScriptManager {
 
         scriptState[ScriptState.Evaluated::class]?.removeIf { paths.contains(it.scriptFile.absolutePath) }
 
-        // evaluate all scripts
+        // evaluate all scripts; isolate failures so one bad script does not abort Reactant init
         list
             .sortedBy { it.scriptFile.name.firstOrNull() ?: 'Z' }
-            .map {
-                evaluateScript(it)
-            }
+            .mapNotNull { evaluateScriptCatching(it) }
             .forEach {
                 scriptState.getOrPut(ScriptState.Evaluated::class) { LinkedList() }.add(it)
             }
