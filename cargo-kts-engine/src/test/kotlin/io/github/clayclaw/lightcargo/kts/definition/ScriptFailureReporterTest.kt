@@ -28,8 +28,32 @@ class ScriptFailureReporterTest {
 
         assertContains(message, "Error while evaluating script: ${script.name}:2")
         assertContains(message, "NullPointerException (no message)")
-        assertContains(message, "source: val eventService = injectContainer<EventService>()!!")
+        assertContains(message, "> 2| val eventService = injectContainer<EventService>()!!")
         assertContains(message, "Demo_lc.<init>(${script.name}:2)")
         assertTrue("Other.kt" !in message.split("at ").drop(1).first())
+    }
+
+    @Test
+    fun `format maps bytecode line past EOF to nearby source`() {
+        val script = Files.createTempFile("demo", ".lc.kts").toFile()
+        script.writeText(
+            """
+            val disposables = CompositeDisposable()
+            val eventService = injectContainer<EventService>()!!
+            eventService { }
+            """.trimIndent()
+        )
+
+        val error = NullPointerException().apply {
+            stackTrace = arrayOf(
+                StackTraceElement("Demo_lc", "<init>", script.name, 22)
+            )
+        }
+
+        val message = ScriptFailureReporter.format("evaluating", script, error)
+
+        assertContains(message, ":22 (mapped to line 3 of 3)")
+        assertContains(message, "bytecode line 22 is past end of file (3 lines)")
+        assertContains(message, "> 3| eventService { }")
     }
 }

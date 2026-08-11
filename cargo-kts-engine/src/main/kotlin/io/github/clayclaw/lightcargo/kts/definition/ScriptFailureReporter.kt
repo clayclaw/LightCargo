@@ -17,21 +17,28 @@ object ScriptFailureReporter {
         val root = rootCause(throwable)
         val frames = scriptFrames(throwable, scriptFile)
         val primaryFrame = frames.firstOrNull()
-        val sourceLine = primaryFrame?.lineNumber
+        val source = primaryFrame?.lineNumber
             ?.takeIf { it > 0 }
-            ?.let { scriptFile.readLineOrNull(it) }
-            ?.trim()
+            ?.let { scriptFile.resolveSourceContext(it) }
 
         return buildString {
             append("Error while ").append(phase).append(" script: ").append(scriptFile.name)
-            primaryFrame?.lineNumber?.takeIf { it > 0 }?.let { append(":$it") }
+            when {
+                source == null -> Unit
+                source.reportedLine != source.displayLine -> {
+                    append(":").append(source.reportedLine)
+                    append(" (mapped to line ").append(source.displayLine)
+                    append(" of ").append(source.totalLines).append(")")
+                }
+                else -> append(":").append(source.reportedLine)
+            }
             append('\n')
             append("  ").append(root.javaClass.name)
             root.message?.takeIf { it.isNotBlank() }?.let { append(": ").append(it) }
                 ?: append(" (no message)")
-            if (sourceLine != null) {
+            if (source != null) {
                 append('\n')
-                append("  source: ").append(sourceLine)
+                append(source.render())
             }
             if (frames.isNotEmpty()) {
                 append('\n')
@@ -78,9 +85,53 @@ object ScriptFailureReporter {
             .distinct()
     }
 
-    private fun File.readLineOrNull(lineNumber: Int): String? {
-        return runCatching {
-            useLines { lines -> lines.drop(lineNumber - 1).firstOrNull() }
-        }.getOrNull()
+    private fun File.resolveSourceContext(reportedLine: Int): SourceContext? {
+        val lines = runCatching { readLines() }.getOrNull() ?: return null
+        if (lines.isEmpty()) return null
+
+        // Kotlin script <init> frames often point one past the last statement.
+        val displayLine = reportedLine.coerceIn(1, lines.size)
+        val contextStart = (displayLine - 2).coerceAtLeast(1)
+        val contextEnd = (displayLine + 1).coerceAtMost(lines.size)
+
+        return SourceContext(
+            reportedLine = reportedLine,
+            displayLine = displayLine,
+            totalLines = lines.size,
+            snippet = (contextStart..contextEnd).map { lineNo ->
+                SourceLine(lineNo, lines[lineNo - 1], highlight = lineNo == displayLine)
+            }
+        )
+    }
+
+    private data class SourceLine(
+        val number: Int,
+        val text: String,
+        val highlight: Boolean
+    )
+
+    private data class SourceContext(
+        val reportedLine: Int,
+        val displayLine: Int,
+        val totalLines: Int,
+        val snippet: List<SourceLine>
+    ) {
+        fun render(): String = buildString {
+            if (reportedLine > totalLines) {
+                append("  note: bytecode line ")
+                append(reportedLine)
+                append(" is past end of file (")
+                append(totalLines)
+                append(" lines); showing nearby source")
+                append('\n')
+            }
+            snippet.forEach { line ->
+                append(if (line.highlight) "  > " else "    ")
+                append(line.number)
+                append("| ")
+                append(line.text.trimEnd())
+                append('\n')
+            }
+        }.trimEnd()
     }
 }

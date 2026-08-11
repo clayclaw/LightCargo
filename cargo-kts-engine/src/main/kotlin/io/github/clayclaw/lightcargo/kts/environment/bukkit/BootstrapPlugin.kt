@@ -34,7 +34,10 @@ class ScriptLoader(
 ): LifeCycleHook {
 
     override fun onEnable() {
-        loadAll()
+        // Defer until the current Reactant Initialize bulk finishes so @Provide
+        // services (EventService, etc.) and this component are fully registered.
+        val plugin = BootstrapPlugin.instance
+        plugin.server.scheduler.runTask(plugin, Runnable { loadAll() })
     }
 
     private fun loadAll() {

@@ -31,7 +31,10 @@ const val BUKKIT_SCRIPT_DEFINITION_NAME = "lc.kts"
 abstract class BukkitScriptBase: ScriptBase
 
 object BukkitScriptCompilationConfig: ScriptCompilationConfiguration({
-    defaultImports(javaImports + kotlinCoroutinesImports + annotationsImports + bukkitAnnotationsImports + bukkitImports)
+    defaultImports(
+        javaImports + kotlinCoroutinesImports + annotationsImports +
+            bukkitAnnotationsImports + bukkitImports + scriptInjectImports
+    )
     jvm {
         updateClasspath(bukkitHostCompileClasspath())
         compilerOptions.append("-Xadd-modules=ALL-MODULE-PATH", "-jvm-target=25")
@@ -138,4 +141,8 @@ val bukkitImports = listOf(
 
 val bukkitAnnotationsImports = listOf(
     "io.github.clayclaw.lightcargo.kts.environment.bukkit.annotation.*"
+)
+
+val scriptInjectImports = listOf(
+    "io.github.clayclaw.lightcargo.kts.environment.bukkit.inject.*"
 )
