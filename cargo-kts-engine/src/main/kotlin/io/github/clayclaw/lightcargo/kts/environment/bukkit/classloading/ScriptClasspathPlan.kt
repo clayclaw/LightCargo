@@ -21,11 +21,16 @@ data class ScriptClasspathPlan(
     }
 
     fun createPolicy(): ClassLoadingPolicy {
+        val reactantClassLoader = ReactantCore.instance.javaClass.classLoader
+        val engineClassLoader = BootstrapPlugin.pluginClassLoader
         return ClassLoadingPolicy(
-            reactantClassLoader = ReactantCore.instance.javaClass.classLoader,
-            engineClassLoader = BootstrapPlugin.pluginClassLoader,
-            serverClassLoader = BootstrapPlugin.pluginClassLoader.parent,
-            pluginRoutes = pluginRoutes.values.toList()
+            reactantClassLoader = reactantClassLoader,
+            engineClassLoader = engineClassLoader,
+            serverClassLoader = engineClassLoader.parent,
+            pluginRoutes = pluginRoutes.values.toList(),
+            // Index fat-jar contents so shaded deps (e.g. RxJava) route to the owning plugin loader.
+            reactantClassIndex = HostClassPathIndexes.forLoader(reactantClassLoader),
+            engineClassIndex = HostClassPathIndexes.forLoader(engineClassLoader)
         )
     }
 
@@ -66,6 +71,23 @@ data class ScriptClasspathPlan(
     private fun findProtectedOwner(index: ClassPathIndex, policy: ClassLoadingPolicy): String? {
         index.classNames.firstNotNullOfOrNull { policy.protectedOwnerFor(it) }?.let { return it }
         return index.packageNames.firstNotNullOfOrNull { policy.protectedPackageOwnerFor(it) }
+    }
+}
+
+/**
+ * Cached indexes of host plugin jar contents (Reactant / engine), not parent/server loaders.
+ */
+object HostClassPathIndexes {
+    private val indexes = ConcurrentHashMap<ClassLoader, ClassPathIndex>()
+
+    fun forLoader(classLoader: ClassLoader): ClassPathIndex {
+        return indexes.computeIfAbsent(classLoader) {
+            classLoader.classpathFiles().toClassPathIndex()
+        }
+    }
+
+    fun clear() {
+        indexes.clear()
     }
 }
 

@@ -33,6 +33,48 @@ class ScriptClassLoaderTest {
     }
 
     @Test
+    fun `shaded Reactant fat-jar dependencies are delegated via class index`() {
+        val fqcn = "io.reactivex.rxjava3.disposables.CompositeDisposable"
+        val reactantClasses = compileClass(fqcn)
+        val scriptClasses = compileClass(fqcn)
+        val reactantLoader = classLoaderFor(reactantClasses)
+        val scriptLoader = ScriptClassLoader(
+            listOf(scriptClasses.toUri().toURL()),
+            ClassLoadingPolicy(
+                reactantClassLoader = reactantLoader,
+                engineClassLoader = emptyLoader(),
+                serverClassLoader = null,
+                reactantPackagePrefixes = emptySet(),
+                enginePackagePrefixes = emptySet(),
+                serverPackagePrefixes = emptySet(),
+                reactantClassIndex = listOf(reactantClasses.toFile()).toClassPathIndex()
+            )
+        )
+
+        assertSame(reactantLoader.loadClass(fqcn), scriptLoader.loadClass(fqcn))
+    }
+
+    @Test
+    fun `shaded Reactant dependencies are rejected as protected duplicates`() {
+        val fqcn = "io.reactivex.rxjava3.disposables.CompositeDisposable"
+        val dependencyClasses = compileClass(fqcn)
+        val policy = ClassLoadingPolicy(
+            reactantClassLoader = emptyLoader(),
+            engineClassLoader = emptyLoader(),
+            serverClassLoader = null,
+            reactantPackagePrefixes = emptySet(),
+            enginePackagePrefixes = emptySet(),
+            serverPackagePrefixes = emptySet(),
+            reactantClassIndex = listOf(dependencyClasses.toFile()).toClassPathIndex()
+        )
+        val plan = ScriptClasspathPlan(Files.createTempFile("script", ".lc.kts").toFile())
+
+        assertFailsWith<IllegalArgumentException> {
+            plan.recordResolvedDependencies(listOf(dependencyClasses.toFile()), policy)
+        }
+    }
+
+    @Test
     fun `Kotlin scripting classes are delegated to the engine before Reactant Kotlin runtime`() {
         val fqcn = "kotlin.script.experimental.jvmhost.HostType"
         val engineClasses = compileClass(fqcn)

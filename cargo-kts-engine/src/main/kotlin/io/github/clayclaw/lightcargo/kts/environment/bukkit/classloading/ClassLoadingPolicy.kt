@@ -20,15 +20,17 @@ data class ClassLoadingPolicy(
     val pluginRoutes: List<PluginClassLoaderRoute> = emptyList(),
     val reactantPackagePrefixes: Set<String> = defaultReactantPackagePrefixes(),
     val enginePackagePrefixes: Set<String> = defaultEnginePackagePrefixes(),
-    val serverPackagePrefixes: Set<String> = defaultServerPackagePrefixes()
+    val serverPackagePrefixes: Set<String> = defaultServerPackagePrefixes(),
+    val reactantClassIndex: ClassPathIndex = ClassPathIndex.empty,
+    val engineClassIndex: ClassPathIndex = ClassPathIndex.empty
 ) {
     fun routeFor(className: String): ClassLoaderRoute? {
         return when {
             className.isJavaPlatformClass() -> null
-            enginePackagePrefixes.matchesClassName(className) -> {
+            enginePackagePrefixes.matchesClassName(className) || engineClassIndex.ownsClass(className) -> {
                 ClassLoaderRoute("LightCargo-KtsEngine", engineClassLoader)
             }
-            reactantPackagePrefixes.matchesClassName(className) -> {
+            reactantPackagePrefixes.matchesClassName(className) || reactantClassIndex.ownsClass(className) -> {
                 ClassLoaderRoute("Reactant", reactantClassLoader)
             }
             else -> {
