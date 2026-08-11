@@ -3,6 +3,7 @@ main: io.github.clayclaw.lightcargo.kts.environment.bukkit.BootstrapPlugin
 version: 0.0.1
 description: LightCargo KtsEngine plugin
 author: ButterJar#0149
+api-version: '1.21'
 depend:
   - Reactant
 commands:
