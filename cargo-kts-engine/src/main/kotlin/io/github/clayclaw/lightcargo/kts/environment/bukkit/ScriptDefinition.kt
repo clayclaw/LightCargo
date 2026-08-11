@@ -6,7 +6,8 @@ import io.github.clayclaw.lightcargo.kts.definition.annotation.*
 import io.github.clayclaw.lightcargo.kts.definition.kotlin.FileBasedScriptCache
 import io.github.clayclaw.lightcargo.kts.environment.bukkit.annotation.*
 import io.github.clayclaw.lightcargo.kts.environment.bukkit.classloading.ScriptClasspathPlans
-import io.github.clayclaw.lightcargo.kts.environment.bukkit.classloading.classpathFiles
+import io.github.clayclaw.lightcargo.kts.environment.bukkit.classloading.classpathFilesIncludingParents
+import io.github.clayclaw.lightcargo.kts.environment.bukkit.classloading.serverApiClasspathFiles
 import java.io.File
 import kotlin.script.experimental.annotations.KotlinScript
 import kotlin.script.experimental.api.*
@@ -33,7 +34,7 @@ object BukkitScriptCompilationConfig: ScriptCompilationConfiguration({
     defaultImports(javaImports + kotlinCoroutinesImports + annotationsImports + bukkitAnnotationsImports + bukkitImports)
     jvm {
         updateClasspath(bukkitHostCompileClasspath())
-        compilerOptions.append("-Xadd-modules=ALL-MODULE-PATH", "-jvm-target=17")
+        compilerOptions.append("-Xadd-modules=ALL-MODULE-PATH", "-jvm-target=25")
     }
     refineConfiguration {
         onAnnotations(
@@ -86,8 +87,9 @@ private fun resolveBukkitScriptAnnotations(context: ScriptConfigurationRefinemen
 
 private fun bukkitHostCompileClasspath(): List<File> {
     return (
-        BukkitScriptBase::class.java.classLoader.classpathFiles() +
-            ReactantCore.instance.javaClass.classLoader.classpathFiles()
+        BukkitScriptBase::class.java.classLoader.classpathFilesIncludingParents() +
+            ReactantCore.instance.javaClass.classLoader.classpathFilesIncludingParents() +
+            serverApiClasspathFiles()
         )
         .distinctBy { it.canonicalFile.absolutePath }
 }
