@@ -5,6 +5,7 @@ import io.github.clayclaw.lightcargo.kts.definition.ScriptFailureReporter
 import io.github.clayclaw.lightcargo.kts.definition.ScriptState
 import io.github.clayclaw.lightcargo.kts.definition.discoverAllScriptRecursively
 import io.github.clayclaw.lightcargo.kts.definition.manager.ScriptManager
+import io.github.clayclaw.lightcargo.kts.environment.bukkit.annotation.rehydrateRequiredPluginRoutes
 import io.github.clayclaw.lightcargo.kts.environment.bukkit.classloading.ScriptClasspathPlans
 import java.io.File
 import java.util.*
@@ -35,6 +36,8 @@ class BukkitScriptManager : ScriptManager {
         bukkitScriptCacheDir.mkdirs()
         ScriptClasspathPlans.reset(scriptFile)
         val compiledScript = compiler(scriptFile.toScriptSource(), BukkitScriptCompilationConfig).valueOrThrow()
+        // Cache hits skip annotation refinement; always rehydrate @RequiredPlugins routes for evaluation.
+        rehydrateRequiredPluginRoutes(scriptFile)
         return ScriptState.Compiled(scriptFile, compiledScript, scriptFile.lastModified())
     }
 
@@ -47,7 +50,8 @@ class BukkitScriptManager : ScriptManager {
     }
 
     private suspend fun evaluateScript(compiledScript: ScriptState.Compiled): ScriptState.Evaluated {
-        val classpathPlan = ScriptClasspathPlans.get(compiledScript.scriptFile)
+        val classpathPlan = rehydrateRequiredPluginRoutes(compiledScript.scriptFile)
+        classpathPlan.diagnostics.forEach { BootstrapPlugin.instance.logger.warning(it) }
         BootstrapPlugin.instance.logger.fine(
             "Script ${compiledScript.scriptFile.name} classloader routes: ${classpathPlan.describeRoutes()}"
         )

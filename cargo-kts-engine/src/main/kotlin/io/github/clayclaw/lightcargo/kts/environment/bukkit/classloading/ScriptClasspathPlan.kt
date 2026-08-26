@@ -47,6 +47,14 @@ data class ScriptClasspathPlan(
 
     fun recordRequiredPlugin(pluginName: String, classLoader: ClassLoader, files: List<File>) {
         val index = files.toClassPathIndex()
+        if (index.classNames.isEmpty()) {
+            val message = "Required plugin $pluginName produced an empty class index " +
+                "(files=${files.map { it.name }.ifEmpty { listOf("<none>") }}); " +
+                "script classes from that plugin may fail at runtime with NoClassDefFoundError."
+            if (message !in diagnostics) {
+                diagnostics.add(message)
+            }
+        }
         pluginRoutes[pluginName] = PluginClassLoaderRoute(pluginName, classLoader, index)
         compileClasspath.addAll(files)
     }

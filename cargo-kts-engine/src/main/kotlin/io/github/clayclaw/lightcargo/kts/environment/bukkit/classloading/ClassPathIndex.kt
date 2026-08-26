@@ -31,6 +31,35 @@ fun ClassLoader.classpathFiles(): List<File> {
         ?: emptyList()
 }
 
+/**
+ * Collect jars visible for scripting from a Bukkit/Paper plugin.
+ * Prefer URLClassLoader urls, then fall back to the plugin's own jar
+ * (Paper loaders are not always URLClassLoader subclasses).
+ */
+fun pluginClasspathFiles(plugin: org.bukkit.plugin.Plugin): List<File> {
+    val files = linkedSetOf<File>()
+    files.addAll(plugin.javaClass.classLoader.classpathFiles())
+    plugin.javaClass.protectionDomain?.codeSource?.location?.toExistingFile()?.let(files::add)
+    javaPluginFile(plugin)?.let(files::add)
+    return files.toList()
+}
+
+private fun javaPluginFile(plugin: org.bukkit.plugin.Plugin): File? {
+    return runCatching {
+        var type: Class<*>? = plugin.javaClass
+        while (type != null) {
+            val current = type
+            val method = runCatching { current.getDeclaredMethod("getFile") }.getOrNull()
+            if (method != null) {
+                method.isAccessible = true
+                return@runCatching (method.invoke(plugin) as? File)?.takeIf { it.exists() }
+            }
+            type = current.superclass
+        }
+        null
+    }.getOrNull()
+}
+
 fun ClassLoader.classpathFilesIncludingParents(): List<File> {
     val files = linkedSetOf<File>()
     var current: ClassLoader? = this
